@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字符组合生成器 | 优化版</title>
+    <style>
+        :root {
+            --dark-gray: #2c3e50;
+            --medium-gray: #34495e;
+            --light-gray: #7f8c8d;
+            --lightest-gray: #ecf0f1;
+            --accent-color: #3498db;
+            --warning-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--dark-gray), var(--medium-gray));
+            color: var(--lightest-gray);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(44, 62, 80, 0.85);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background-color: var(--dark-gray);
+            padding: 25px 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: var(--lightest-gray);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            color: var(--light-gray);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 30px;
+        }
+        
+        .config-panel {
+            flex: 1;
+            min-width: 300px;
+            padding: 25px;
+            background-color: rgba(52, 73, 94, 0.6);
+            border-radius: 10px;
+            margin-right: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .result-panel {
+            flex: 2;
+            min-width: 300px;
+            padding: 25px;
+            background-color: rgba(52, 73, 94, 0.6);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .panel-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--light-gray);
+            color: var(--lightest-gray);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--lightest-gray);
+            font-weight: 500;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            background-color: rgba(236, 240, 241, 0.1);
+            color: var(--lightest-gray);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        }
+        
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 14px 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .result-container {
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        .result-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .result-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        
+        .result-container::-webkit-scrollbar-thumb {
+            background: var(--light-gray);
+            border-radius: 10px;
+        }
+        
+        .result-section {
+            margin-bottom: 25px;
+            background-color: rgba(44, 62, 80, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .result-header {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--lightest-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-content {
+            padding: 15px;
+            background-color: rgba(52, 73, 94, 0.4);
+            border-radius: 6px;
+        }
+        
+        .combo-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(127, 140, 141, 0.3);
+            transition: background-color 0.2s;
+        }
+        
+        .combo-item:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .combo-item:last-child {
+            border-bottom: none;
+        }
+        
+        .combo-char {
+            font-size: 2.5rem;
+            margin-right: 15px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .combo-details {
+            flex: 1;
+        }
+        
+        .combo-formula {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .combo-info {
+            color: var(--light-gray);
+            font-size: 0.9rem;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(127, 140, 141, 0.3);
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background-color: rgba(44, 62, 80, 0.7);
+            border-radius: 6px;
+            flex: 1;
+            margin: 0 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--light-gray);
+        }
+        
+        .warning {
+            color: var(--warning-color);
+            background-color: rgba(231, 76, 60, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+        
+        .success {
+            color: var(--success-color);
+            background-color: rgba(46, 204, 113, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .symbol-preview {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: rgba(44, 62, 80, 0.5);
+            border-radius: 6px;
+        }
+        
+        .symbol-preview-char {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+        
+        .symbol-preview-info {
+            font-size: 0.9rem;
+            color: var(--light-gray);
+        }
+        
+        .byte-info {
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            background-color: var(--dark-gray);
+            color: var(--light-gray);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .config-panel {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+            
+            .stat-item {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>字符组合生成器</h1>
+            <p class="subtitle">优化版 - 支持高4位匹配检查</p>
+        </header>
+        
+        <div class="content">
+            <div class="config-panel">
+                <h2 class="panel-title">配置参数</h2>
+                
+                <div class="warning">
+                    <strong>重要提示：</strong> 本版本如果输入多字符符号，系统将自动提取第一个字符。
+                </div>
+                
+                <div class="form-group">
+                    <label for="targetSymbol">目标符号 (仅支持单个字符)</label>
+                    <input type="text" id="targetSymbol" value="👅">
+                </div>
+                
+                <div class="symbol-preview">
+                    <div class="symbol-preview-char" id="symbolPreview">👅</div>
+                    <div class="symbol-preview-info">
+                        <div>字符长度: <span id="symbolLength">1</span></div>
+                        <div>Unicode: <span id="symbolUnicode">U+1F445</span></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="baseEmojis">基础表情 (用逗号分隔)</label>
+                    <textarea id="baseEmojis" rows="3">😀,🎉,❤️,⭐,✨,🔥,🌙,🍎,🚀,💡</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="searchRange">搜索范围</label>
+                    <select id="searchRange">
+                        <option value="B">B区 (42,720字)</option>
+                        <option value="BC">B+C区 (82,944字)</option>
+                        <option value="all" selected>所有分区 (252,944字)</option>
+                    </select>
+                </div>
+                
+                <button id="generateBtn">生成组合</button>
+            </div>
+            
+            <div class="result-panel">
+                <h2 class="panel-title">生成结果</h2>
+                
+                <div class="result-container" id="resultContainer">
+                    <div style="text-align: center; padding: 40px; color: var(--light-gray);">
+                        点击"生成组合"按钮开始生成字符组合
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalCombinations">0</div>
+                        <div class="stat-label">总组合数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="processingTime">0ms</div>
+                        <div class="stat-label">处理时间</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="targetCount">0</div>
+                        <div class="stat-label">目标符号</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>字符组合生成器 &copy; 2025 | 由捌佰里（陌巷）开发</p>
+        </footer>
+    </div>
+
+    <script>
+        // 字符组合生成逻辑
+        class CharacterFusionGenerator {
+            // CJK扩展字符范围
+            static CJK_RANGES = {
+                'B': [0x20000, 0x2A6DF],
+                'C': [0x2A700, 0x2B73F],
+                'D': [0x2B740, 0x2B81F],
+                'E': [0x2B820, 0x2CEAF],
+                'F': [0x2CEB0, 0x2EBEF],
+                'G': [0x30000, 0x3134F],
+                'H': [0x31350, 0x323AF],
+                'I': [0x2EBF0, 0x2EE5F]
+            };
+            
+            constructor(baseEmojis, targetSymbol, searchRange) {
+                this.baseEmojis = baseEmojis;
+                this.targetSymbol = targetSymbol;
+                this.searchRange = searchRange;
+                this.emojiFeatures = this.preprocessEmojis();
+            }
+            
+            preprocessEmojis() {
+                const features = {};
+                for (const emoji of this.baseEmojis) {
+                    try {
+                        const encoder = new TextEncoder();
+                        const bytes = encoder.encode(emoji);
+                        
+                        if (bytes.length === 4) {
+                            features[emoji] = {
+                                bytes: bytes,
+                                high4bits: bytes[2] & 0xF0
+                            };
+                        }
+                    } catch (error) {
+                        console.warn(`处理表情符号 ${emoji} 时出错:`, error);
+                    }
+                }
+                return features;
+            }
+            
+            extractTargetFeatures(targetChar) {
+                try {
+                    const encoder = new TextEncoder();
+                    const bytes = encoder.encode(targetChar);
+                    
+                    if (bytes.length !== 4) return null;
+                    
+                    return {
+                        bytes: bytes,
+                        low4bits: bytes[2] & 0x0F,
+                        high4bits: bytes[2] & 0xF0,
+                        byte4: bytes[3]
+                    };
+                } catch (error) {
+                    console.error(`提取目标符号特征时出错:`, error);
+                    return null;
+                }
+            }
+            
+            // 检查高4位匹配
+            checkHigh4bitsMatch(targetFeatures) {
+                const targetHigh4bits = targetFeatures.high4bits;
+                let matchingEmojis = [];
+                
+                for (const [emoji, emojiData] of Object.entries(this.emojiFeatures)) {
+                    if (emojiData.high4bits === targetHigh4bits) {
+                        matchingEmojis.push(emoji);
+                    }
+                }
+                
+                return {
+                    matched: matchingEmojis.length > 0,
+                    emojis: matchingEmojis
+                };
+            }
+            
+            findFusions() {
+                const targetFeatures = this.extractTargetFeatures(this.targetSymbol);
+                if (!targetFeatures) return [];
+                
+                // 检查高4位匹配
+                const high4bitsMatch = this.checkHigh4bitsMatch(targetFeatures);
+                if (!high4bitsMatch.matched) return [];
+                
+                const results = [];
+                // 确定要搜索的范围
+                const rangesToSearch = this.getSearchRanges();
+                
+                for (const rangeName of rangesToSearch) {
+                    const [start, end] = CharacterFusionGenerator.CJK_RANGES[rangeName];
+                    
+                    for (let codePoint = start; codePoint <= end; codePoint++) {
+                        try {
+                            const char = String.fromCodePoint(codePoint);
+                            const encoder = new TextEncoder();
+                            const bytes = encoder.encode(char);
+                            
+                            if (bytes.length !== 4) continue;
+                            
+                            // 快速筛选
+                            if (bytes[3] !== targetFeatures.byte4) continue;
+                            if ((bytes[2] & 0x0F) !== targetFeatures.low4bits) continue;
+                            
+                            // 与所有基础表情组合
+                            for (const [emoji, emojiData] of Object.entries(this.emojiFeatures)) {
+                                // 组合生成
+                                const mixedByte = emojiData.high4bits | (bytes[2] & 0x0F);
+                                const generatedBytes = new Uint8Array([
+                                    emojiData.bytes[0],
+                                    emojiData.bytes[1],
+                                    mixedByte,
+                                    targetFeatures.bytes[3]
+                                ]);
+                                
+                                // 验证匹配
+                                if (this.compareBytes(generatedBytes, targetFeatures.bytes)) {
+                                    results.push({
+                                        base: emoji,
+                                        hanzi: char,
+                                        unicode: `U+${codePoint.toString(16).toUpperCase().padStart(6, '0')}`,
+                                        range: rangeName,
+                                        target: this.targetSymbol
+                                    });
+                                }
+                            }
+                        } catch (error) {
+                            console.warn(`处理字符 U+${codePoint.toString(16)} 时出错:`, error);
+                        }
+                    }
+                }
+                
+                return results;
+            }
+            
+            getSearchRanges() {
+                switch (this.searchRange) {
+                    case 'B': return ['B'];
+                    case 'BC': return ['B', 'C'];
+                    default: return Object.keys(CharacterFusionGenerator.CJK_RANGES);
+                }
+            }
+            
+            compareBytes(a, b) {
+                if (a.length !== b.length) return false;
+                for (let i = 0; i < a.length; i++) {
+                    if (a[i] !== b[i]) return false;
+                }
+                return true;
+            }
+        }
+        
+        // DOM操作和事件处理
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateBtn = document.getElementById('generateBtn');
+            const targetSymbolInput = document.getElementById('targetSymbol');
+            const symbolPreview = document.getElementById('symbolPreview');
+            const symbolLength = document.getElementById('symbolLength');
+            const symbolUnicode = document.getElementById('symbolUnicode');
+            
+            // 更新符号预览
+            function updateSymbolPreview() {
+                const symbol = targetSymbolInput.value;
+                symbolPreview.textContent = symbol;
+                
+                // 计算字符长度
+                const length = [...symbol].length;
+                symbolLength.textContent = length;
+                
+                // 获取Unicode
+                if (symbol.length > 0) {
+                    const codePoint = symbol.codePointAt(0);
+                    symbolUnicode.textContent = `U+${codePoint.toString(16).toUpperCase()}`;
+                } else {
+                    symbolUnicode.textContent = '无';
+                }
+            }
+            
+            // 初始化预览
+            updateSymbolPreview();
+            
+            // 监听输入变化
+            targetSymbolInput.addEventListener('input', updateSymbolPreview);
+            
+            // 生成按钮点击事件
+            generateBtn.addEventListener('click', generateCombinations);
+        });
+        
+        function generateCombinations() {
+            // 获取输入值
+            const targetSymbol = document.getElementById('targetSymbol').value;
+            const baseEmojis = document.getElementById('baseEmojis').value
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+                
+            const searchRange = document.getElementById('searchRange').value;
+            
+            if (!targetSymbol) {
+                alert('请输入目标符号');
+                return;
+            }
+            
+            if (baseEmojis.length === 0) {
+                alert('请提供基础表情');
+                return;
+            }
+            
+            // 检查字符长度
+            const symbolLength = [...targetSymbol].length;
+            if (symbolLength > 1) {
+                // 提取第一个字符
+                const firstChar = [...targetSymbol][0];
+                document.getElementById('targetSymbol').value = firstChar;
+                updateSymbolPreview();
+                
+                // 显示警告
+                const resultContainer = document.getElementById('resultContainer');
+                resultContainer.innerHTML = `
+                    <div class="warning">
+                        <strong>注意：</strong> 检测到多字符符号 "${targetSymbol}" (长度: ${symbolLength})，
+                        已自动提取第一个字符 "${firstChar}" 作为目标符号。
+                    </div>
+                `;
+                
+                // 延迟执行以显示警告
+                setTimeout(() => generateCombinations(), 1000);
+                return;
+            }
+            
+            // 显示加载状态
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <div style="font-size: 1.2rem; margin-bottom: 20px;">正在生成组合...</div>
+                    <div style="width: 50px; height: 50px; border: 5px solid rgba(236, 240, 241, 0.2); border-top: 5px solid var(--accent-color); border-radius: 50%; margin: 0 auto; animation: spin 1s linear infinite;"></div>
+                </div>
+            `;
+            
+            // 添加CSS动画
+            const style = document.createElement('style');
+            style.innerHTML = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+            document.head.appendChild(style);
+            
+            // 使用setTimeout确保UI更新后再执行计算
+            setTimeout(() => {
+                try {
+                    // 创建生成器实例
+                    const generator = new CharacterFusionGenerator(baseEmojis, targetSymbol, searchRange);
+                    
+                    // 提取目标特征
+                    const targetFeatures = generator.extractTargetFeatures(targetSymbol);
+                    
+                    if (!targetFeatures) {
+                        resultContainer.innerHTML = `
+                            <div class="warning">
+                                <strong>错误：</strong> 目标字符必须是4字节UTF-8编码
+                                <div class="byte-info">当前字符编码长度不符合要求</div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // 检查高4位匹配
+                    const high4bitsMatch = generator.checkHigh4bitsMatch(targetFeatures);
+                    
+                    if (!high4bitsMatch.matched) {
+                        resultContainer.innerHTML = `
+                            <div class="warning">
+                                <strong>错误：</strong> 目标字符的高4位与任何基础表情都不匹配
+                                <div class="byte-info">目标字符高4位: 0x${(targetFeatures.high4bits).toString(16).toUpperCase().padStart(2, '0')}</div>
+                                <div class="byte-info">请添加匹配的基础表情</div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // 生成组合
+                    const startTime = performance.now();
+                    const results = generator.findFusions();
+                    const procTime = performance.now() - startTime;
+                    
+                    // 更新统计信息
+                    document.getElementById('totalCombinations').textContent = results.length;
+                    document.getElementById('processingTime').textContent = `${procTime.toFixed(1)}ms`;
+                    document.getElementById('targetCount').textContent = 1;
+                    
+                    // 显示结果
+                    displayResults(results, targetSymbol);
+                } catch (error) {
+                    console.error('生成组合时出错:', error);
+                    resultContainer.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #e74c3c;">
+                            <h3>生成组合时出错</h3>
+                            <p>${error.message}</p>
+                            <p>请检查输入参数后重试</p>
+                        </div>
+                    `;
+                }
+            }, 100);
+        }
+        
+        function displayResults(results, targetSymbol) {
+            const resultContainer = document.getElementById('resultContainer');
+            
+            if (results.length === 0) {
+                resultContainer.innerHTML = `
+                    <div class="result-section">
+                        <div class="result-header">
+                            <span>${targetSymbol}</span>
+                            <span>未找到组合</span>
+                        </div>
+                        <div class="warning">
+                            未找到生成该符号的有效组合，请尝试：
+                            <ul>
+                                <li>添加更多基础表情</li>
+                                <li>扩大搜索范围</li>
+                                <li>尝试其他目标符号</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            // 按分区分组结果
+            const rangeGroups = {};
+            for (const result of results) {
+                const range = result.range;
+                if (!rangeGroups[range]) {
+                    rangeGroups[range] = [];
+                }
+                rangeGroups[range].push(result);
+            }
+            
+            // 显示每个分区的结果
+            for (const [rangeName, combos] of Object.entries(rangeGroups)) {
+                html += `
+                    <div class="result-section">
+                        <div class="result-header">
+                            <span>${targetSymbol} - ${rangeName}区</span>
+                            <span>${combos.length}种组合</span>
+                        </div>
+                        <div class="result-content">
+                `;
+                
+                for (const combo of combos) {
+                    html += `
+                        <div class="combo-item">
+                            <div class="combo-char">${combo.target}</div>
+                            <div class="combo-details">
+                                <div class="combo-formula">${combo.base} + ${combo.hanzi}</div>
+                                <div class="combo-info">Unicode: ${combo.unicode} | 分区: ${combo.range}区</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultContainer.innerHTML = html;
+        }
+        
+        // 更新符号预览
+        function updateSymbolPreview() {
+            const symbol = document.getElementById('targetSymbol').value;
+            const symbolPreview = document.getElementById('symbolPreview');
+            const symbolLength = document.getElementById('symbolLength');
+            const symbolUnicode = document.getElementById('symbolUnicode');
+            
+            symbolPreview.textContent = symbol;
+            
+            // 计算字符长度
+            const length = [...symbol].length;
+            symbolLength.textContent = length;
+            
+            // 获取Unicode
+            if (symbol.length > 0) {
+                const codePoint = symbol.codePointAt(0);
+                symbolUnicode.textContent = `U+${codePoint.toString(16).toUpperCase()}`;
+            } else {
+                symbolUnicode.textContent = '无';
+            }
+        }
+    </script>
+</body>
+</html>
